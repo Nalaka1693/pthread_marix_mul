@@ -4,11 +4,14 @@
 #include <pthread.h>
 
 #define GET_US(X) (X.tv_sec * 1000000 + X.tv_usec)
-#define SIZE 100
+#define SIZE 10
 
 void print_mat(char *, int **, int, int);
+
 int **generate_square_matrix(int);
+
 int **serial_matrix_mul(int **, int **, int);
+
 int **transpose(int **, int);
 
 int main() {
@@ -19,6 +22,7 @@ int main() {
     int **result;
     int **mat_1 = generate_square_matrix(SIZE);
     int **mat_2 = generate_square_matrix(SIZE);
+    mat_1[2][3] = 4;
 
     if (gettimeofday(&start, &z)) goto error_exit;
     result = serial_matrix_mul(mat_1, mat_2, SIZE);
@@ -27,32 +31,46 @@ int main() {
     printf("Time = %ld\n", diff);
 
     print_mat(NULL, result, SIZE, SIZE);
-
+    int **tran = transpose(result, SIZE);
+    print_mat(NULL, tran, SIZE, SIZE);
 
     return 0;
 
     error_exit:
-    printf("Cannot read time.\n");
-    return -1;
+    printf("cannot read time.\n");
+    return NULL;
 }
 
 int **transpose(int **a, int size) {
     int i, j, **matrix = (int **) malloc(sizeof(int *) * size);
+    if (!matrix) goto malloc_err;
+
     for (i = 0; i < size; i++) {
         int *row = (int *) malloc(sizeof(int) * size);
+        if (!row) goto malloc_err;
+        matrix[i] = row;
+
         for (j = 0; j < size; j++) {
             matrix[i][j] = a[j][i];
         }
     }
 
     return matrix;
+
+    malloc_err:
+    printf("cannot allocate memory.\n");
+    return NULL;
 }
 
 int **serial_matrix_mul(int **a, int **b, int size) {
-    int i, j, k,**matrix = (int **) malloc(sizeof(int *) * size);
+    int i, j, k, **matrix = (int **) malloc(sizeof(int *) * size);
+    if (!matrix) goto malloc_err;
+
     for (i = 0; i < size; i++) {
         int *row = (int *) malloc(sizeof(int) * size);
+        if (!row) goto malloc_err;
         matrix[i] = row;
+
         for (j = 0; j < size; j++) {
             int ele_total = 0;
             for (k = 0; k < size; k++) {
@@ -63,13 +81,21 @@ int **serial_matrix_mul(int **a, int **b, int size) {
         }
     }
 
-    return  matrix;
+    return matrix;
+
+    malloc_err:
+    printf("cannot allocate memory.\n");
+    return NULL;
 }
 
 int **generate_square_matrix(int size) {
     int i, j, **matrix = (int **) malloc(sizeof(int *) * size);
+    if (!matrix) goto malloc_err;
+
     for (i = 0; i < size; i++) {
         int *row = (int *) malloc(sizeof(int) * size);
+        if (!row) goto malloc_err;
+
         matrix[i] = row;
         for (j = 0; j < size; j++) {
             row[j] = 1;
@@ -77,6 +103,10 @@ int **generate_square_matrix(int size) {
     }
 
     return matrix;
+
+    malloc_err:
+    printf("cannot allocate memory.\n");
+    return NULL;
 }
 
 void print_mat(char *msg, int **mat, int rows, int cols) {
