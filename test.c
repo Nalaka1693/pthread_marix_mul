@@ -44,7 +44,23 @@ int main() {
     return -1;
 }
 
+int **serial_matrix_mul(int **a, int **b, int size) {
+    int i, j, k,**matrix = (int **) malloc(sizeof(int *) * size);
+    for (i = 0; i < size; i++) {
+        int *row = (int *) malloc(sizeof(int) * size);
+        matrix[i] = row;
+        for (j = 0; j < size; j++) {
+            int ele_total = 0;
+            for (k = 0; k < size; k++) {
+                ele_total += a[i][k] * b[k][j];
+            }
 
+            matrix[i][j] = ele_total;
+        }
+    }
+
+    return  matrix;
+}
 
 int **generate_square_matrix(int size) {
     int i, j, **matrix = (int **) malloc(sizeof(int *) * size);
