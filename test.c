@@ -2,15 +2,72 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <assert.h>
 
 #define GET_US(X) (X.tv_sec * 1000000 + X.tv_usec)
-#define SIZE 10000
+#define SIZE 1000
+#define THREADS 4
+
+typedef struct {
+    int start;
+    int end;
+    int **mat_1;
+    int **mat_2;
+    int **result;
+    int size;
+} thread_data_t;
 
 void print_mat(char *, int **, int, int);
 int **generate_square_matrix(int);
-int **serial_matrix_mul(int **, int **, int);
-int **serial_trans_matrix_mul(int **, int **, int);
+int **serial_matrix_mul(int **, int **, int, int);
+int **parallel_matrix_mul(int **, int **, int, int, int);
 int **transpose(int **, int);
+
+void *thread_routine_ntrans(void * arg) {
+    int start = ((thread_data_t *) arg)->start;
+    int end = ((thread_data_t *) arg)->end;
+    int **mat_1 = ((thread_data_t *) arg)->mat_1;
+    int **mat_2 = ((thread_data_t *) arg)->mat_2;
+    int **result = ((thread_data_t *) arg)->result;
+    int size = ((thread_data_t *) arg)->size;
+
+    int i, j, k;
+    for (i = start; i < end; i++) {
+        for (j = 0; j < size; j++) {
+            int ele_total = 0;
+            for (k = 0; k < size; k++) {
+                ele_total += mat_1[i][k] * mat_2[k][j];
+            }
+
+            result[i][j] = ele_total;
+        }
+    }
+
+    pthread_exit(NULL);
+}
+
+void *thread_routine_trans(void * arg) {
+    int start = ((thread_data_t *) arg)->start;
+    int end = ((thread_data_t *) arg)->end;
+    int **mat_1 = ((thread_data_t *) arg)->mat_1;
+    int **mat_2 = ((thread_data_t *) arg)->mat_2;
+    int **result = ((thread_data_t *) arg)->result;
+    int size = ((thread_data_t *) arg)->size;
+
+    int i, j, k;
+    for (i = start; i < end; i++) {
+        for (j = 0; j < size; j++) {
+            int ele_total = 0;
+            for (k = 0; k < size; k++) {
+                ele_total += mat_1[i][k] * mat_2[j][k];
+            }
+
+            result[i][j] = ele_total;
+        }
+    }
+
+    pthread_exit(NULL);
+}
 
 int main() {
     struct timeval start, end;
@@ -22,26 +79,31 @@ int main() {
     int **mat_2 = generate_square_matrix(SIZE);
     mat_2[2][3] = 4;
 
-
     if (gettimeofday(&start, &z)) goto error_exit;
-    result = serial_matrix_mul(mat_1, mat_2, SIZE);
+    result = parallel_matrix_mul(mat_1, mat_2, SIZE, THREADS, 0);
     if (gettimeofday(&end, &z)) goto error_exit;
     diff_1 = GET_US(end) - GET_US(start);
-    printf("mul time = %ld\n", diff_1);
+    printf("pa_n time = %ld\n", diff_1);
 
     if (gettimeofday(&start, &z)) goto error_exit;
-    int **mat_2_t = transpose(mat_2, SIZE);
+    result = parallel_matrix_mul(mat_1, mat_2, SIZE, THREADS, 1);
     if (gettimeofday(&end, &z)) goto error_exit;
-    diff_2 = GET_US(end) - GET_US(start);
-    printf("t time = %ld\n", diff_2);
+    diff_1 = GET_US(end) - GET_US(start);
+    printf("pa_t time = %ld\n", diff_1);
 
     if (gettimeofday(&start, &z)) goto error_exit;
-    result = serial_trans_matrix_mul(mat_1, mat_2_t, SIZE);
+    result = serial_matrix_mul(mat_1, mat_2, SIZE, 0);
+    if (gettimeofday(&end, &z)) goto error_exit;
+    diff_1 = GET_US(end) - GET_US(start);
+    printf("se_n time = %ld\n", diff_1);
+
+    if (gettimeofday(&start, &z)) goto error_exit;
+    result = serial_matrix_mul(mat_1, mat_2, SIZE, 1);
     if (gettimeofday(&end, &z)) goto error_exit;
     diff_3 = GET_US(end) - GET_US(start);
-    printf("t mul time = %ld\n", diff_3);
-
-    printf("performance gain = %ld - (%ld + %ld) = %ld\n", diff_1, diff_3, diff_2, diff_1 - (diff_2 + diff_3));
+    printf("se_t time = %ld\n", diff_3);
+//
+//    printf("performance gain = %ld - %ld = %ld\n", diff_1, diff_3, diff_1 - diff_3);
 
     return 0;
 
@@ -50,30 +112,79 @@ int main() {
     return -1;
 }
 
-int **parallel_trans_matrix_mul(int **a, int **b, int size) {
-    return NULL;
-}
-
-int **parallel_matrix_mul(int **a, int **b, int size, int thread_count) {
-
-}
-
-int **serial_trans_matrix_mul(int **a, int **b, int size) {
-    int i, j, k, **matrix = (int **) malloc(sizeof(int *) * size);
+int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int transposed) {
+    int i, **matrix = (int **) malloc(sizeof(int *) * size);
     if (!matrix) goto malloc_err;
-
-    for (i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
         int *row = (int *) malloc(sizeof(int) * size);
         if (!row) goto malloc_err;
         matrix[i] = row;
+    }
 
-        for (j = 0; j < size; j++) {
-            int ele_total = 0;
-            for (k = 0; k < size; k++) {
-                ele_total += a[i][k] * b[j][k];
+    if (transposed) {
+        if (size < thread_count) {
+            pthread_t threads[size];
+            for (i = 0; i < size; i++) {
+
+            }
+        } else if (size % thread_count == 0) {
+            int frac = size / thread_count;
+            pthread_t threads[thread_count];
+            int **b_t = transpose(b, size);
+            for (i = 0; i < thread_count; i++) {
+                thread_data_t *thread_data = (thread_data_t *) malloc(sizeof(thread_data_t));
+                int iintof = i * frac;
+                thread_data->start = iintof;
+                thread_data->end = iintof + frac;
+                thread_data->mat_1 = a;
+                thread_data->mat_2 = b_t;
+                thread_data->result = matrix;
+                thread_data->size = size;
+                assert(!pthread_create(&threads[i], NULL, thread_routine_trans, (void *) thread_data));
             }
 
-            matrix[i][j] = ele_total;
+            for (i = 0; i < thread_count; i++) {
+                pthread_join(threads[i], NULL);
+            }
+        } else if (thread_count * 2 > size) {
+            pthread_t threads[thread_count - 1];
+            for (i = 0; i < thread_count - 1; i++) {
+
+            }
+        } else {
+
+        }
+    } else {
+        if (size < thread_count) {
+            pthread_t threads[size];
+            for (i = 0; i < size; i++) {
+
+            }
+        } else if (size % thread_count == 0) {
+            int frac = size / thread_count;
+            pthread_t threads[thread_count];
+            for (i = 0; i < thread_count; i++) {
+                thread_data_t *thread_data = (thread_data_t *) malloc(sizeof(thread_data_t));
+                int iintof = i * frac;
+                thread_data->start = iintof;
+                thread_data->end = iintof + frac;
+                thread_data->mat_1 = a;
+                thread_data->mat_2 = b;
+                thread_data->result = matrix;
+                thread_data->size = size;
+                assert(!pthread_create(&threads[i], NULL, thread_routine_ntrans, (void *) thread_data));
+            }
+
+            for (i = 0; i < thread_count; i++) {
+                pthread_join(threads[i], NULL);
+            }
+        } else if (thread_count * 2 > size) {
+            pthread_t threads[thread_count - 1];
+            for (i = 0; i < thread_count - 1; i++) {
+
+            }
+        } else {
+
         }
     }
 
@@ -105,22 +216,40 @@ int **transpose(int **a, int size) {
     return NULL;
 }
 
-int **serial_matrix_mul(int **a, int **b, int size) {
+int **serial_matrix_mul(int **a, int **b, int size, int transposed) {
     int i, j, k, **matrix = (int **) malloc(sizeof(int *) * size);
     if (!matrix) goto malloc_err;
 
-    for (i = 0; i < size; i++) {
-        int *row = (int *) malloc(sizeof(int) * size);
-        if (!row) goto malloc_err;
-        matrix[i] = row;
+    if (!transposed) {
+        for (i = 0; i < size; i++) {
+            int *row = (int *) malloc(sizeof(int) * size);
+            if (!row) goto malloc_err;
+            matrix[i] = row;
 
-        for (j = 0; j < size; j++) {
-            int ele_total = 0;
-            for (k = 0; k < size; k++) {
-                ele_total += a[i][k] * b[k][j];
+            for (j = 0; j < size; j++) {
+                int ele_total = 0;
+                for (k = 0; k < size; k++) {
+                    ele_total += a[i][k] * b[k][j];
+                }
+
+                matrix[i][j] = ele_total;
             }
+        }
+    } else {
+        int **b_t = transpose(b, size);
+        for (i = 0; i < size; i++) {
+            int *row = (int *) malloc(sizeof(int) * size);
+            if (!row) goto malloc_err;
+            matrix[i] = row;
 
-            matrix[i][j] = ele_total;
+            for (j = 0; j < size; j++) {
+                int ele_total = 0;
+                for (k = 0; k < size; k++) {
+                    ele_total += a[i][k] * b_t[j][k];
+                }
+
+                matrix[i][j] = ele_total;
+            }
         }
     }
 
