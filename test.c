@@ -95,7 +95,7 @@ int main() {
 int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int transposed) {
     int i, **matrix = (int **) malloc(sizeof(int *) * size);
     if (!matrix) goto malloc_err;
-    for (int i = 0; i < size; i++) {
+     for (i = 0; i < size; i++) {
         int *row = (int *) malloc(sizeof(int) * size);
         if (!row) goto malloc_err;
         matrix[i] = row;
@@ -185,7 +185,7 @@ int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int tran
 int **parallel_transpose(int **a, int size, int thread_count) {
     int i, **matrix = (int **) malloc(sizeof(int *) * size);
     if (!matrix) goto malloc_err;
-    for (int i = 0; i < size; i++) {
+     for (i = 0; i < size; i++) {
         int *row = (int *) malloc(sizeof(int) * size);
         if (!row) goto malloc_err;
         matrix[i] = row;
