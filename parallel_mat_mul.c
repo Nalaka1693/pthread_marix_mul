@@ -19,6 +19,7 @@ typedef struct {
 } thread_data_t;
 
 void print_matrix(char *, int **, int, int);
+void matrix_mem_free(int **, int);
 void analyze(void);
 int **generate_square_matrix(int);
 int **serial_matrix_mul(int **, int **, int, int);
@@ -149,6 +150,7 @@ int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int tran
             for (i = 0; i < thread_count; i++) {
                 pthread_join(threads[i], NULL);
             }
+            matrix_mem_free(b_t, size);
         } else if (thread_count * 2 > size) {
             pthread_t threads[thread_count - 1];
             for (i = 0; i < thread_count - 1; i++) {
@@ -237,7 +239,6 @@ int **parallel_transpose(int **a, int size, int thread_count) {
 
     }
 
-
     return matrix;
 
     malloc_err:
@@ -280,6 +281,7 @@ int **serial_matrix_mul(int **a, int **b, int size, int transposed) {
                 matrix[i][j] = ele_total;
             }
         }
+        matrix_mem_free(b_t, size);
     } else {
         for (i = 0; i < size; i++) {
             int *row = (int *) malloc(sizeof(int) * size);
@@ -373,6 +375,18 @@ void print_matrix(char *msg, int **mat, int rows, int cols) {
     printf("\n");
 }
 
+/* matrix memory free
+ * @ mat: reference to the matrix need to be freed
+ * @ size: size of the square matrix
+ */
+void matrix_mem_free(int **mat, int size) {
+    int i;
+    for (i = 0; i < size; i++) {
+        free(mat[i]);
+    }
+    free(mat);
+}
+
 /* some analyzing code for performance comparing
  */
 void analyze(void) {
@@ -395,36 +409,45 @@ void analyze(void) {
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%ld\t", diff_1);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%ld\t", diff_1);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%ld\t", diff_1);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 0);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%ld\t", diff_1);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%ld\t", diff_1);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%ld\n", diff_1);
+        matrix_mem_free(result, i);
+
+        matrix_mem_free(mat_1, i);
+        matrix_mem_free(mat_2, i);
     }
 
     return;
