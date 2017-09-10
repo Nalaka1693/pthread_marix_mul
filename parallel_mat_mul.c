@@ -1,18 +1,44 @@
 /* matrix multiplication performance tested on six scenarios
  *
- * s_m,t_n -> serial multiplication and both untransposed matrices
- * s_m,t_s -> serial multiplication and one serially transposed matrix
- * s_m,t_p -> serial multiplication and one parallelly transposed matrix
- * p_m,t_n -> parallel multiplication and both untransposed matrices
- * p_m,t_s -> parallel multiplication and one serially transposed matrix
- * p_m,t_p -> parallel multiplication one parallelly transposed matrix
+ * s_m,n_t -> serial multiplication and both untransposed matrices
+ * s_m,s_t -> serial multiplication and one serially transposed matrix
+ * s_m,p_t -> serial multiplication and one parallelly transposed matrix
+ * p_m,n_t -> parallel multiplication and both untransposed matrices
+ * p_m,s_t -> parallel multiplication and one serially transposed matrix
+ * p_m,p_t -> parallel multiplication and one parallelly transposed matrix
  *
- * size    s_m,t_n         s_m,t_s         s_m,t_p         p_m,t_n         p_m,t_s         p_m,t_p
+ * all times are in seconds with micro second precision
+ *
+ * corei3
+ * size    s_m,n_t         s_m,s_t         s_m,p_t         p_m,n_t         p_m,s_t         p_m,p_t
  * 1000    11.655115       4.375538 	   4.375467        5.281501 	   2.281360 	   2.282026
  * 2000    113.718077      35.065581       34.737341       50.589790       18.350671       18.330118
  * 3000    486.600354      116.169977      116.321871      218.822065      61.373005       61.282945
  * 4000    1316.753109     275.491810      274.913886      621.828521
+ * 
+ * dual core
+ * size    s_m,t_n         s_m,t_s         s_m,t_p         p_m,t_n         p_m,t_s         p_m,t_p
+ * 1000    11.667001       5.063219        5.151984        6.653818        2.909295        3.139972
+ * 2000    105.010285      49.862603       49.013855       63.431698       31.667863       31.520016
+ * 3000    405.391298      161.887154      161.420638      140.135249      107.059176      106.877331
  *
+ * serial_matrix_mul: function multiply 2 matrices serially element by
+ *  element. time complexity O(n^3)
+ *
+ * serial_transpose: function transposing one matrix serially. time complexity O(n^2)
+ *
+ * parallel_matrix_mul: function multiply 2 matrices parallely. decompsite
+ *  data by rows of the result matrix. sets of rows are given to different
+ *  threads. time complexity O(n^3)
+ *
+ * parallel_transpose: function transposing one matrix parallelly. time complexity O(n^2).
+ *  decompsite data by rows of the result matrix.
+ *
+ * serial multiply cost more time but transposing second matrix will give large performance
+ * improvement because of the efficient cache access. parallel multipication and prallel
+ * transpose will cost more time for small matrix sizes because of the thread creation cost
+ * (only at size 1000). best performance given when using the both parallel multiplication
+ * and transpose functions.
  *
  */
 
@@ -111,6 +137,8 @@ void *thread_routine_transpose(void *arg) {
             result[i][j] = mat_1[j][i];
         }
     }
+
+    pthread_exit(NULL);
 }
 
 int main() {
@@ -413,7 +441,7 @@ void analyze(void) {
     struct timezone z;
     double diff_1;
 
-    printf("size\ts_m,t_n\t\ts_m,t_s\t\ts_m,t_p\t\tp_m,t_n\t\tp_m,t_s\t\tp_m,t_p\n");
+    printf("size\ts_m,n_t\t\ts_m,s_t\t\ts_m,p_t\t\tp_m,n_t\t\tp_m,s_t\t\tp_m,p_t\n");
 
     int i, **result;
     // only work for i % threads == 0
