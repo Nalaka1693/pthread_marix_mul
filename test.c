@@ -88,9 +88,27 @@ void *thread_routine_transpose(void *arg) {
 }
 
 int main() {
-    analyze();
+//    analyze();
+    struct timeval start, end;
+    struct timezone z;
+    long int diff_1;
+
+    int **result;
+    int **mat_1 = generate_square_matrix(SIZE);
+    int **mat_2 = generate_square_matrix(SIZE);
+
+    if (gettimeofday(&start, &z)) goto error_exit;
+    result = serial_matrix_mul(mat_1, mat_2, SIZE, 0);
+    if (gettimeofday(&end, &z)) goto error_exit;
+    diff_1 = GET_US(end) - GET_US(start);
+    printf("%ld\t", diff_1);
 
     return 0;
+
+    error_exit:
+    printf("cannot read time.\n");
+    return -1;
+
 }
 
 int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int transposed) {

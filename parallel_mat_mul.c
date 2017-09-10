@@ -1,3 +1,22 @@
+/* matrix multiplication performance tested on six scenarios
+ *
+ * s_m,t_n -> serial multiplication and both untransposed matrices
+ * s_m,t_s -> serial multiplication and one serially transposed matrix
+ * s_m,t_p -> serial multiplication and one parallelly transposed matrix
+ * p_m,t_n -> parallel multiplication and both untransposed matrices
+ * p_m,t_s -> parallel multiplication and one serially transposed matrix
+ * p_m,t_p -> parallel multiplication one parallelly transposed matrix
+ *
+ * size    s_m,t_n         s_m,t_s         s_m,t_p         p_m,t_n         p_m,t_s         p_m,t_p
+ * 1000    11.655115       4.375538 	   4.375467        5.281501 	   2.281360 	   2.282026
+ * 2000    113.718077      35.065581       34.737341       50.589790       18.350671       18.330118
+ * 3000    486.600354      116.169977      116.321871      218.822065      61.373005       61.282945
+ * 4000    1316.753109     275.491810      274.913886      621.828521
+ *
+ *
+ */
+
+
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +48,7 @@ int **parallel_transpose(int **, int, int);
 
 /* thread routine for both non transeposed matrices
  */
-void *thread_routine_mul_ntrans(void *arg) {
+void *thread_routine_mul_untrans(void *arg) {
     int start = ((thread_data_t *) arg)->start;
     int end = ((thread_data_t *) arg)->end;
     int **mat_1 = ((thread_data_t *) arg)->mat_1;
@@ -175,7 +194,7 @@ int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int tran
                 thread_data->mat_2 = b;
                 thread_data->result = matrix;
                 thread_data->size = size;
-                assert(!pthread_create(&threads[i], NULL, thread_routine_mul_ntrans, (void *) thread_data));
+                assert(!pthread_create(&threads[i], NULL, thread_routine_mul_untrans, (void *) thread_data));
             }
 
             for (i = 0; i < thread_count; i++) {
@@ -392,7 +411,7 @@ void matrix_mem_free(int **mat, int size) {
 void analyze(void) {
     struct timeval start, end;
     struct timezone z;
-    long int diff_1;
+    double diff_1;
 
     printf("size\ts_m,t_n\t\ts_m,t_s\t\ts_m,t_p\t\tp_m,t_n\t\tp_m,t_s\t\tp_m,t_p\n");
 
@@ -408,42 +427,42 @@ void analyze(void) {
         result = serial_matrix_mul(mat_1, mat_2, i, 0);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
-        printf("%ld\t", diff_1);
+        printf("%f\t", diff_1 / 1000000.0);
         matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
-        printf("%ld\t", diff_1);
+        printf("%f\t", diff_1 / 1000000.0);
         matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
-        printf("%ld\t", diff_1);
+        printf("%f\t", diff_1 / 1000000.0);
         matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 0);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
-        printf("%ld\t", diff_1);
+        printf("%f\t", diff_1 / 1000000.0);
         matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
-        printf("%ld\t", diff_1);
+        printf("%f\t", diff_1 / 1000000.0);
         matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
-        printf("%ld\n", diff_1);
+        printf("%f\t", diff_1 / 1000000.0);
         matrix_mem_free(result, i);
 
         matrix_mem_free(mat_1, i);
