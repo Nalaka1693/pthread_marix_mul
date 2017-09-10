@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #define GET_US(X) (X.tv_sec * 1000000 + X.tv_usec)
+// only work for size % threads == 0
 #define SIZE 1000
 #define THREADS 4
 
@@ -144,9 +145,7 @@ int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int tran
     } else {
         if (size < thread_count) {
             pthread_t threads[size];
-            for (i = 0; i < size; i++) {
-
-            }
+            // TODO  when size is less than the thread count
         } else if (size % thread_count == 0) {
             int frac = size / thread_count;
             pthread_t threads[thread_count];
@@ -167,9 +166,7 @@ int **parallel_matrix_mul(int **a, int **b, int size, int thread_count, int tran
             }
         } else if (thread_count * 2 > size) {
             pthread_t threads[thread_count - 1];
-            for (i = 0; i < thread_count - 1; i++) {
-
-            }
+            // TODO
         } else {
 
         }
@@ -193,9 +190,7 @@ int **parallel_transpose(int **a, int size, int thread_count) {
 
     if (size < thread_count) {
         pthread_t threads[size];
-        for (i = 0; i < size; i++) {
-
-        }
+        // TODO when size id less than the thread count
     } else if (size % thread_count == 0) {
         int frac = size / thread_count;
         pthread_t threads[thread_count];
@@ -217,9 +212,7 @@ int **parallel_transpose(int **a, int size, int thread_count) {
         }
     } else if (thread_count * 2 > size) {
         pthread_t threads[thread_count - 1];
-        for (i = 0; i < thread_count - 1; i++) {
-
-        }
+        // TODO
     } else {
 
     }
