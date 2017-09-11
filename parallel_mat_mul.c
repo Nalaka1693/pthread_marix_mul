@@ -456,45 +456,40 @@ void analyze(void) {
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
-        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
-        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
-        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 0);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
-        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
-        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
-        matrix_mem_free(result, i);
 
         matrix_mem_free(mat_1, i);
         matrix_mem_free(mat_2, i);
+        matrix_mem_free(result, i);
     }
 
     return;
