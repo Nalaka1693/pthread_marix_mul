@@ -21,6 +21,12 @@
  * 1000    11.667001       5.063219        5.151984        6.653818        2.909295        3.139972
  * 2000    105.010285      49.862603       49.013855       63.431698       31.667863       31.520016
  * 3000    405.391298      161.887154      161.420638      140.135249      107.059176      106.877331
+ 
+ * xeon
+ * size    s_m,n_t         s_m,s_t         s_m,p_t         p_m,n_t         p_m,s_t         p_m,p_t
+ * 1000    6.765998        3.300273        3.301610        1.716495        0.852855        1.215227
+ * 2000    63.787786       26.363870       26.351717       7.732306        6.753414        9.240850
+ * 3000    181.629340      91.507772       91.498154       47.050190       23.631547       23.466153
  *
  * serial_matrix_mul: function multiply 2 matrices serially element by
  *  element. time complexity O(n^3)
@@ -456,40 +462,45 @@ void analyze(void) {
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = serial_matrix_mul(mat_1, mat_2, i, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 0);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 1);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
+        matrix_mem_free(result, i);
 
         if (gettimeofday(&start, &z)) goto error_exit;
         result = parallel_matrix_mul(mat_1, mat_2, i, THREADS, 2);
         if (gettimeofday(&end, &z)) goto error_exit;
         diff_1 = GET_US(end) - GET_US(start);
         printf("%f\t", diff_1 / 1000000.0);
+        matrix_mem_free(result, i);
 
         matrix_mem_free(mat_1, i);
         matrix_mem_free(mat_2, i);
-        matrix_mem_free(result, i);
     }
 
     return;
